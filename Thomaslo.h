@@ -351,6 +351,10 @@ public:
                 for (int i = 16; i < 32; ++i) {
                     value += (1 << i) * get_digit(7, 7, value);
                 }
+            } else if (c.funct3 == 0b100) {
+                value = value & ((1 << 8) - 1);
+            } else if (c.funct3 == 0b101) {
+                value = value & ((1 << 16) - 1);
             }
             reorder.r[c.rd].value = value;
         }
