@@ -330,6 +330,7 @@ public:
     void memory_execute(command c, int pos) {
         if (c.command_type == 2) {
             int p = reorder.r[c.rs1].value + c.immediate;
+
             if (c.funct3 == 0b000) {
                 unsigned int value = reorder.r[c.rs2].value & (1 << 8) - 1;
                 memory[p] = value;
@@ -342,16 +343,37 @@ public:
             }
         } else if (c.command_type == 1) {
             unsigned int p = reorder.r[c.rs1].value + c.immediate;
-            unsigned int value = memory[p];
+            unsigned int position = (p >> 2) << 2;
+            unsigned int value = memory[position];
+            int place = p % 4;
             if (c.funct3 == 0b000) {
+                if (place == 0) {
+                    value = value & ((1 << 8) - 1);
+                } else if (place == 1) {
+                    value = (value & ((1 << 16) - 1)) >> 8;
+                } else if (place == 2) {
+                    value = (value & ((1 << 24) - 1)) >> 16;
+                } else {
+                    value = (value & ((1 << 32) - 1)) >> 24;
+                }
                 for (int i = 8; i < 32; ++i) {
                     value += (1 << i) * get_digit(7, 7, value);
                 }
             } else if (c.funct3 == 0b001) {
+                value = value & ((1 << 16) - 1);
                 for (int i = 16; i < 32; ++i) {
                     value += (1 << i) * get_digit(7, 7, value);
                 }
             } else if (c.funct3 == 0b100) {
+                if (place == 0) {
+                    value = value & ((1 << 8) - 1);
+                } else if (place == 1) {
+                    value = (value & ((1 << 16) - 1)) >> 8;
+                } else if (place == 2) {
+                    value = (value & ((1 << 24) - 1)) >> 16;
+                } else {
+                    value = (value & ((1 << 32) - 1)) >> 24;
+                }
                 value = value & ((1 << 8) - 1);
             } else if (c.funct3 == 0b101) {
                 value = value & ((1 << 16) - 1);
