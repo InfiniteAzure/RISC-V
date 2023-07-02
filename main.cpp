@@ -3,7 +3,7 @@
 #include "Thomaslo.h"
 
 int main() {
-    freopen("../sample.data", "r", stdin);
+    //freopen("../sample.data", "r", stdin);
     //freopen("../ans.out","w",stdout);
     read_all();
     int Clo = 0;
