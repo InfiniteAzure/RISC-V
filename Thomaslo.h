@@ -116,6 +116,8 @@ public:
     int statistics = 0;
     int writing = 0;
     bool waiting = false;
+    int OK = 0;
+    int wrong = 0;
 
     void IFetch() {
         if (!waiting) {
@@ -385,25 +387,14 @@ public:
     void commit() {
         if (reorder.size != 0) {
             int pos = reorder.head;
-            if (writing == 2) {
-                writing++;
-                return;
-            } else if (writing == 3) {
-                memory_execute(reorder.regs[pos].c, pos);
-                writing = 0;
-                if (reorder.r[reorder.regs[pos].c.rd].busy && reorder.r[reorder.regs[pos].c.rd].rob == pos) {
-                    reorder.r[reorder.regs[pos].c.rd].busy = false;
-                }
-                reorder.pop();
-                return;
-            }
             if (reorder.regs[pos].ready) {
                 if (reorder.regs[pos].c.command_type == 2 || (reorder.regs[pos].c.command_type == 1 &&
                                                               reorder.regs[pos].c.op_code == 0b0000011)) {
                     writing = 2;
                 } else if (reorder.regs[pos].c.command_type != 3) {
                     if (reorder.regs[pos].c.value == 0x0ff00513) {
-                        std::cout << (reorder.r[10].value & 255);
+                        std::cout << (reorder.r[10].value & 255) << '\n';
+                        //std::cout << OK << " " << wrong;
                         exit(0);
                     }
                     if (reorder.r[reorder.regs[pos].c.rd].busy && reorder.r[reorder.regs[pos].c.rd].rob == pos) {
@@ -413,32 +404,45 @@ public:
                         reorder.r[reorder.regs[pos].c.rd].value = reorder.regs[pos].res;
                     }
                     reorder.pop();
-                    return;
                 } else {
                     if (reorder.regs[pos].res && reorder.regs[pos].guess) {
                         if (statistics != 3) {
                             statistics++;
                         }
                         reorder.pop();
+                        OK++;
                     } else if ((!reorder.regs[pos].res) && (!reorder.regs[pos].guess)) {
                         if (statistics != 0) {
                             statistics--;
                         }
                         reorder.pop();
+                        OK++;
                     }  else if (reorder.regs[pos].res && (!reorder.regs[pos].guess)) {
                         pc = reorder.regs[pos].pc_pos + reorder.regs[pos].c.immediate;
                         reorder.clear();
                         if (statistics != 3) {
                             statistics++;
                         }
+                        wrong++;
                     } else {
                         pc = reorder.regs[pos].pc_pos + 4;
                         reorder.clear();
                         if (statistics != 0) {
                             statistics--;
                         }
+                        wrong++;
                     }
-                    return;
+                }
+                if (writing == 2) {
+                    writing++;
+                }
+                if (writing == 3) {
+                    memory_execute(reorder.regs[pos].c, pos);
+                    writing = 0;
+                    if (reorder.r[reorder.regs[pos].c.rd].busy && reorder.r[reorder.regs[pos].c.rd].rob == pos) {
+                        reorder.r[reorder.regs[pos].c.rd].busy = false;
+                    }
+                    reorder.pop();
                 }
             }
         }
